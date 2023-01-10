@@ -16,11 +16,8 @@ EXTRA: se puder ordene por nome.
 import axios from "axios";
 import { useEffect, useState } from "react";
 import "./App.css";
-
-interface listPokemonsProps {
-  name: string;
-}
-[];
+import { Pokemom } from "./Pokemon";
+import { listPokemonsProps } from "./types";
 
 function App() {
   const [listPokemon, setListPokemon] = useState<listPokemonsProps[]>([]);
@@ -31,58 +28,24 @@ function App() {
         return a.name.localeCompare(b.name);
       });
 
-      setListPokemon(sortedArray);
+      const promisesArray = sortedArray.map((item) => {
+        return axios.get(item.url);
+      });
+
+      Promise.all(promisesArray).then((responses: any) => {
+        setListPokemon(responses);
+      });
     });
   }, []);
+  const isloading = listPokemon.length === 0;
   return (
     <div className="App">
       <h1>consumir api pokémon</h1>
       <hr />
+      {isloading && <div>Carregando pokemons...</div>}
       {listPokemon.map((item) => (
-        <Pokemom key={item.name} data={item} />
+        <Pokemom key={item.data.name} detailsPokemon={item.data} />
       ))}
-    </div>
-  );
-}
-
-interface PokemonProps {
-  data: {
-    name?: string;
-    url?: any;
-  };
-}
-
-interface PokemonDetailsProps {
-  name: string;
-  base_experience: number;
-  sprites: {
-    front_default: string;
-  };
-}
-
-function Pokemom({ data }: PokemonProps) {
-  const [detailsPokemon, setDetailsPokemon] =
-    useState<PokemonDetailsProps | null>(null);
-
-  useEffect(() => {
-    axios.get(data.url).then((response) => setDetailsPokemon(response.data));
-  }, []);
-
-  if (detailsPokemon === null) {
-    return <div>-</div>;
-  }
-  return (
-    <div style={{ display: "flex", alignItems: "center", marginRight: 20 }}>
-      <span>
-        <img
-          src={detailsPokemon.sprites.front_default}
-          alt={detailsPokemon.name}
-          style={{ width: 50, height: 50, display: "flex" }}
-        />
-      </span>
-      <span>
-        <b>{detailsPokemon.name}</b> - EXP {detailsPokemon.base_experience}
-      </span>
     </div>
   );
 }
